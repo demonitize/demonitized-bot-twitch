@@ -49,3 +49,8 @@
 `??spoilers` - Posts a message asking people to not post spoilers.
 
 `??spam` - Floods the chat with *"[SPOILER ABOVE]"*. If you abuse this I will revoke your access to the entire bot.
+
+---
+# Features #
+
+. Automated system for banning those `wanna bacome famous` bots
