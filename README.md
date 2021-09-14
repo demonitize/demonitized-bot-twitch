@@ -52,5 +52,4 @@
 
 ---
 # Features #
-
-. Automated system for banning those `wanna bacome famous` bots
+- Automated system for banning those `wanna bacome famous` bots
