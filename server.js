@@ -6,7 +6,7 @@ const os = require('os');
 const app = express();
 const fetch = require('node-fetch'); // depracated but i refuse to learn a new API
 const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const sql = require("sqlite3"); // no use but its here so, thats nice i guess
+// const sql = require("sqlite3"); // no use but its here so, thats nice i guess
 const prefix = "??";
 const configuration = require('./config.json');
 const packageJson = require('./package.json');
@@ -25,13 +25,16 @@ var chnlLockdown = false; // Default to lockdown being disabled.
 
 // "desc":"a puzzle map where you have to switch between the color world and grey (gray) world and solve puzzles using light and color as a mechanic. Black Bastion is still on hold while Henzoid goes to therapy due to the emotional trauma it caused him. Also it's a collaboration with CrazyCowMM"
 
+// "desc": "The second iteration of Miscommunications, which is a map to test your abilities to communicate with each other under extreme limitations. TL;DR Cow Return Grass 2.0"
+
 // "name": "CryptsNCreepers",
 // "desc": "a modded SMP with a story but the SMP isn't regular minecraft, it's a turn-based RPG with teams."
 
 const opts = {
 	options: {
 		debug: true,
-		clientId: process.env.CLIENT_ID
+		clientId: process.env.CLIENT_ID,
+		joinInterval: 500
 	},
 	connection: {
 		reconnect: true,
@@ -39,7 +42,7 @@ const opts = {
 		maxReconnectInterval: 30000,
 		reconnectDecay: 1.5,
 		reconnectInterval: 5000,
-		secure: true
+		secure: true,
 	},
 	identity: {
 		username: `demonitized_bot`,
@@ -59,16 +62,20 @@ client.on("subscription", onSubHandler);
 client.on("resub", onResubHandler);
 client.on("cheer", onCheerHandler);
 client.on("hosted", onHostedHandler);
-// client.on(`subgift`, onGiftSubHandler);
+// client.on('subgift', onGiftSubHandler);
 client.on('submysterygift', onGiftSubMysteryHandler);
 client.on('giftpaidupgrade', onGiftSubUpgradeHandler);
+client.on('ban', onModerationHandler);
+client.on('timeout', onModerationHandler);
+client.on('messagedeleted', onModerationHandler);
+client.on('clearchat', onModerationHandler);
 client.on("emotesets", (sets, obj) => {
 	// Here are the emotes I can use:
 	var emotesets = {
 		sets: sets,
 		obj: obj
 	}
-	console.log(`Unlocked Emote Sets: ${sets}`)
+	console.log(`Unlocked Emote Sets: ${emotesets.sets}`);
 	// console.log(`Allowed Emotes: ${obj}`);
 });
 // Connect to Twitch:
@@ -76,24 +83,32 @@ client.connect();
 
 
 // Called every time a message comes in
-function onMessageHandler(target, userstate, msg, self, tags, user, context) {
+function onMessageHandler(target, userstate, msg, self, tags, user) {
+
+	var uname = userstate["username"];
+	var dname = userstate["display-name"];
+	var badges = JSON.stringify(userstate["badges"]);
 
 	if (self) return; // Ignore messages from the bot;
 	if (target == "#hen_zoid" && userstate["username"] == "nightbot") {
-		client.say("#hen_zoid", "Thank you Nightbot");
+		client.say("#hen_zoid", "Thank you Nightbot"); /* Thanks Nightbot in Henzoid's chat because for some fucking reason, he does that */
 	}
 
-	if (target == "#thecasperofjacks" && configuration.commands["awoo-mode"] == true) {
-		let randomizer = Math.floor(Math.random() * 9) + 1;
-		switch (randomizer) {
-			case 6:
-			case 9:
-				client.say(target, `Awooooo!!!`);
-				break;
-		}
-	}
+	/* Casper's 'awoo' mode is disabled because its kind of laggy on the system. I do not know why. Fix Soon™ */
 
-	// random code that does not work and im too lazy to fix - Demonitized
+	// if (target == "#thecasperofjacks" && configuration.commands["awoo-mode"] == true) {
+	// 	let randomizer = Math.floor(Math.random() * 9) + 1;
+	// 	switch (randomizer) {
+	// 		case 6:
+	// 		case 9:
+	// 			client.say(target, `Awooooo!!!`);
+	// 			break;
+	// 	}
+	// }
+
+
+	// if (context["custom-reward-id"] == null)
+
 
 	// var msgID = userstate["target-msg-id"];
 
@@ -102,27 +117,82 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 
 	// var args = msg.split(" ")
 
+
+
+	var responseTemplates = {
+		"pronouns": `${dname} -> Thank you for asking about my pronouns! My pronouns are currently ${configuration.pronouns[target]}! You can set your pronouns by visiting pronouns.alejo.io/chrome`,
+		"noPermission": `${uname} -> I'm sorry, but you do not have the required permission to use this command. Please contact Demonitized_Boi if you believe this is an error`
+	}
+
 	let rawargs = msg
 		.trim()
 		.split(/ +/);
-	var uname = userstate["username"];
 
-	// Debug for the auto-ban system
+
+	/* Debug for the auto-ban system */
 
 	// if (target == "#demonitized_boi") console.log(rawargs[9]);
 
 	/*
-			Scam bot message goes here for code refference 
+			Scam bot message goes here for code reference
 
  			Wanna become famous? Buy followers, primes and viewers on https://cutt.us/getfollows ( bigfollows . com )!
 
-		*/
+			Wanna become famous? Buy followers, primes and viewers on bigfollows .com !
 
-	if (rawargs[11] == "bigfollows" && rawargs[12] == "." && rawargs[13] == "com") {
-		// Make this a switch statement because testing channel names like this is crap - Demonitize
-		if (target == "#hen_zoid" || target == "#demonitized_boi" || target == "#peter_lgbt" || target == "#mrquestion11" || target == "#chubbss_" || target == "#trollfartsvt") {
-			client.ban(target, uname, `Automaticly banned for bot. Trigger: Posting phishing link.`);
-			client.say(target, `Banned ${uname} for posting phishing link.`);
+		*/
+	if (configuration.moderation.channels.includes(target)) {
+		if (msg.includes("cutt.ly/") || rawargs[9] == "bigfollows" || rawargs[9] == "bigfollow" || rawargs[11] == "bigfollows" || rawargs[11] == "bigfollow") {
+			if (badges.includes("broadcaster") || badges.includes("moderator") || badges.includes("vip") || badges.includes("subscriber") || badges.includes("partner")) {
+				console.log(`Ignoring ${dname} as they are immune to automod`);
+				return;
+			} else {
+				client.ban(target, uname, `Automaticly banned for bot. Trigger: Posting phishing link`).then(returndata => {
+					console.log(returndata);
+				});
+				client.say(target, `Automaticly banned ${uname} for posting phishing link`);
+				/* Post to webhook so I can ban them in other channels at a later date */
+				let webhookOptions = {
+					'method': 'POST',
+					'url': 'https://canary.discord.com/api/webhooks/849129837028180028/fIUkk2qo6F5GC2JiaR74XYnolJzFcjS-e_jHzKHWcnsq09C5EhwQE_cBq6EacF-ghPRo',
+					'headers': {
+						'Content-Type': 'application/json',
+						'Cookie': '__dcfduid=62cab842f86145f9a4a271527588b7fa'
+					},
+					"body": JSON.stringify({
+						"username": "Twitch moderation logging",
+						"components": [{
+							"type": 1,
+							"components": [{
+								"type": 2,
+								"style": 4,
+								"label": `Unban ${uname}`,
+								"custom_id": "unban_user",
+								"disabled": true
+							}]
+						}],
+						"embeds": [{
+							"description": "Logging for auto-mod system",
+							"type": "rich",
+							"title": "Scam Link auto-ban",
+							"fields": [{
+									"name": "Channel",
+									"value": target
+								},
+								{
+									"name": "Username",
+									"value": uname
+								},
+								{
+									"name": "Message Content",
+									"value": msg
+								}
+							]
+						}]
+					})
+				}
+				request(webhookOptions);
+			}
 		}
 	}
 
@@ -131,7 +201,6 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 	);
 	let matchedPrefix = msg.match(prefixRegex);
 
-	var badges = JSON.stringify(userstate["badges"]);
 	if (!prefixRegex.test(msg)) return;
 
 
@@ -155,15 +224,80 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 	}
 
 
-	if (configuration.operation.blacklisted.includes(uname)) {
-		client.say(target, `I'm sorry ${uname} but you are blacklisted from using the bot. Please contact DEMONITIZED BOI#6799 on Discord to appeal`);
-	}
+	// if (configuration.operation.blacklisted.includes(uname)) {
+	// 	client.say(target, `I'm sorry ${uname} but you are blacklisted from using the bot. Please contact DEMONITIZED BOI#6799 on Discord to appeal`);
+	// }
 
 
 	switch (command) {
+		case "riri":
+		case "bagged-milk":
+		case "milk":
+			client.say(target, `${dname} -> Bagged Milk is Normal`);
+			break;
+		case "flintlock":
+		case "flint":
+			client.say(target, `"I will bite you and you won't like it" - FlintlockKatze 9/11/2021`);
+			break;
+		case "strawbs":
+			client.say(target, `"You cannot scare me with the 'yet'" - Strawberys 9/20/2021`);
+			break;
+		case "frosty":
+			client.say(target, `"Back in my dad we filled in every last block with our bare hands" - Frosty 8/2/2021`)
+			break;
+		case "pastel":
+			client.say(target, `"Touch the butt" - Pastel 8/24/2021`);
+			break;
+		case "walker":
+			client.say(target, `"Why is he touching my Cream Flap" - Walker 9/26/2021`);
+			break;
+		case "david":
+		case "shirtless-david":
+		case "smexy":
+			client.say(target, `Big What Now Shirtless David in your area`);
+			break;
+		case "pronoun":
+		case "pronouns":
+			switch (target) {
+				case "#r00tkitt":
+					client.say(target, responseTemplates.pronouns);
+					break;
+				case "#treat":
+				case "#tianyivt":
+					client.say(target, responseTemplates.pronouns);
+					break;
+				case "#reportcardsmc":
+					client.say(target, responseTemplates.pronouns);
+					break;
+				case "#demonitized_boi":
+					client.say(target, responseTemplates.pronouns);
+					break;
+				case "#hen_zoid":
+					client.say(target, responseTemplates.pronouns);
+					break;
+				case "#conflicteddweet":
+					client.say(target, responseTemplates.pronouns);
+					break;
+				case "#pastelsdarling":
+					client.say(target, responseTemplates.pronouns);
+					break;
+			}
+			break;
+		case "so":
+			if (uname == "demonitized_boi" || badges.includes("broadcaster") || badges.includes("moderator")) {
+				client.say(target, `HeyGuys Hey chat! HeyGuys Please go check out ${rawargs[1]} at https://twitch.tv/${rawargs[1]} bleedPurple bleedPurple`);
+			}
+			break;
+		case "uwu":
+			client.say(target, `${uname} -> Command disabled until i can make it work without crashing.`);
+			return;
+			// var u = args;
+			var w = u.replace(new RegExp("\\b" + "this" + "\\b"), "thiws").replace(new RegExp("\\b" + "this" + "\\b"), 'thawt').replace(new RegExp("\\b" + "and" + "\\b"), 'awnd').replace(new RegExp("\\b" + "is" + "\\b"), 'iws').replace(new RegExp("\\b" + "to" + "\\b"), 'tuwu').replace(new RegExp("\\b" + "you" + "\\b"), 'uwu').replace(new RegExp("\\b" + "not" + "\\b"), 'nowt').replace(/l/g, 'w').replace(/r/g, 'w');
+			client.say(target, `${w}`);
+			break;
 		case "ad":
 		case "commercial":
-			if (uname == "demonitized_boi" || uname == "pastelsdarling" || uname == "pandasdarling" || uname == "hen_zoid" || uname == "trollfartsvt") {
+			if (uname == "demonitized_boi" || badges.includes("broadcaster") || badges.includes("moderator")) {
 				client.commercial(target, 69);
 				client.say(target, `Running ad / ads for 69 seconds. NGL thats kinda nice`);
 			}
@@ -177,18 +311,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 			break;
 		case "clip":
 		case "create-clip":
-
-			break;
-		case "crash++":
-			if (target == "#quimbly3") {
-				++quimCrash;
-				client.say(target, `NotLikeThis ANOTHER CRASH!? That brings the total to ${quimCrash} times the stream has crashed NotLikeThis`);
-			}
-			break;
-		case "crash":
-			if (target == "#quimbly3") {
-				client.say(target, `NotLikeThis The stream has crashed ${quimCrash} times NotLikeThis`)
-			}
+			/* Does nothing because i haven't found the API for creating clips. */
 			break;
 		case "code":
 			if (target == "#demonitized_boi") {
@@ -197,32 +320,15 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 			break;
 		case "debug":
 			if (uname == "demonitized_boi") {
-				debugCommand(target, userstate, msg, self, tags, user, context);
+				debugCommand(target, userstate, msg, self, tags, user);
 			} else {
-				client.say(target, `@${uname} -> You do not have the required permission to use this command.`)
+				client.say(target, responseTemplates.noPermission);
 			}
-			break;
-		case "rip":
-			client.say(target, "!rip");
-			break;
-		case "language++":
-		case "swear++":
-
-			if (permissions.broadcaster || permissions.mod || permissions.vip || permissions.subscriber || uname == "demonitized_boi") {
-				++quimSwear
-				client.say(target, `NotLikeThis Somebody used their potty mouth a total of ${quimSwear} times while Quimbly3 was streaming. HOW RUDE! NotLikeThis`);
-			} else {
-				client.say(target, `@${uname} -> You do not have the required permission to use this command.`)
-			}
-			break;
-		case "swear":
-		case "language":
-			client.say(target, `Current potty mouth violations: ${quimSwear}`);
 			break;
 		case "part":
 		case "leave":
 		case "dc":
-			if (uname == "demonitized_boi" || uname == "quimbly3") {
+			if (uname == "demonitized_boi" || badges.includes("broadcaster") || badges.includes("moderator")) {
 				client
 					.say(
 						target,
@@ -235,7 +341,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 						);
 					});
 			} else {
-				client.say(target, `@${uname} -> You do not have the required permission to use this command. Please contact Demonitized_boi if you believe this is an error.`)
+				client.say(target, responseTemplates.noPermission);
 			}
 			break;
 		case "d20":
@@ -263,6 +369,11 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 		case "owner":
 			client.say(target, "Bot owned by DEMONITIZED_BOI");
 			break;
+		case "treasure":
+		case "pastel":
+		case "pastelissmartnt":
+			client.say(target, `${uname} -> The easiest way to find Treasure chests in Minecraft is by using the F3 menu and looking for "Chunk 9 * 9". The * can be any number. Only the first and last number matter. Happy Treasure Hunting!`);
+			break;
 		case "howmuchpotdidyousmoke":
 			client.say(target, "https://www.youtube.com/watch?v=Ieuy9SZaFrY");
 			break;
@@ -275,80 +386,80 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 		case "squid":
 			client.say(target, "The squid has come to scare");
 			break;
-		case "downtime":
-			client.say(
-				target,
-				"The downtime is, well, it's complicated. The number is 340,282,366,920,938,463,463,374,607,431,768,211,455"
-			);
-			break;
 		case "arson":
 			client.say(target, `HypeFire HypeFire HypeFire BURN DA CHAT HypeFire HypeFire HypeFire`);
 			break;
 		case "stab":
 			let message = args[0]; // The username of the person you are trying to stab.
-			switch (message) {
+			let messageLwrCase = message.toLowerCase();
+			switch (messageLwrCase) {
 				default:
 					client.say(target, `${uname} stabbed ${message}. LUL Imagine not having a shield LUL`);
 					if (permissions.broadcaster || permissions.mod || permissions.vip || uname == `demonitized_boi` /* This is only here for debugging. */ ) {
 						client.timeout(target, message, 5, `Terminated by stabbing`);
 					};
 					break;
+				case `${uname}`:
+				case `@${uname}`:
+					client.say(target, "You can't stab yourself silly! That would be rude.");
+					break;
 				case "walkernewton":
-				case "WalkerNewton":
-				case "Walker":
-				case "walker":
+				case "@walkernewton":
 					client.say(target, `${uname} tried to stab ${message} but he did not give you consent so...`);
 					break;
 				case "pastelsdarling":
-				case "PastelsDarling":
-				case "Pastel":
-				case "pastel":
+				case "@pastelsdarling":
 					client.say(target, `${uname} tried to stab ${message} but her Bisexual powers™ played an uno reverse card. BisexualPride`);
 					break;
 				case "sisterdarling":
-				case "SisterDarling":
-					client.say(target, `${uname} tried to stab ${message}, but YOU CAN'T STAB PASTEL'S SISTER because that would not be very poglin.`)
+				case "@sisterdarling":
+					client.say(target, `${uname} tried to stab ${message}, but YOU CAN'T STAB PASTEL'S SISTER because that would not be very poglin.`);
 					break;
 				case "quimbly3":
-				case "Quimbly3":
-				case "Quimbly":
-				case "quimbly":
+				case "@quimbly3":
 					client.say(target, `${uname} tried to stab ${message} but she already blew up the building game, so stabbing her won't end well.`);
 					break;
 				case "strawberys":
-				case "Strawberys":
-				case "Strawbs":
-				case "strawbs":
+				case "@strawberys":
 					client.say(target, `${uname} tried to stab ${message} but she's already going to die since she can't survive a single stream, so there's really no need to stab her.`);
 					break;
 				case "demonitized_boi":
-				case "DEMONITIZED_BOI":
-				case "@DEMONITIZED_BOI":
 				case "@demonitized_boi":
 					client.say(target, `${uname} tried to stab ${message} but he created me so... no u`);
 					break;
 				case "corgibutts_darklorduwu":
-				case "CorgiButts_DARKLORDUWU":
-				case "Frosty":
-				case "frosty":
-					client.say(target, `${uname} tried to stab Frosty, but Frosty is smart and took your kneecaps! Also frosty stabbed ${uname}.`)
+				case "@corgibutts_darklorduwu":
+					client.say(target, `SirUwU ${uname} tried to stab Frosty, but Frosty is smart and took your kneecaps! Also frosty stabbed ${uname}. SirUwU`)
 					break;
-				case "elliespectacular":
-				case "EllieSpectacular":
-				case "Ellie":
-				case "ellie":
-					client.say(target, `${uname} tried to stab Ellie, but her YTP editing skills played an Uno Reverse card.`);
+				case "sonofamermaid":
+				case "@sonofamermaid":
+					client.say(target, `${uname} tried to stab ${message}, but he splashed water on you and now you are soaking wet. Everyone point and laugh LUL`)
 					break;
-				case "bee":
-				case "Bee":
-					client.say(target, `${uname} tried to stab Bee, but that would be rude.`);
+				case "treat":
+				case "@treat":
+				case "tianyivt":
+				case "@tianyivt":
+				case "tiyani":
+					client.say(target, `${uname} tried to stab Tianyi, but his heavenly powers smited you.`);
 					break;
+				case "redacted7":
+				case "@redacted7":
+					client.say(target, `${uname} tried to stab Redacted7 but he decided to make his stab message just say "Sussy Poggers."`)
+					break;
+				case "@r00tkitt":
+				case "r00tkitt":
+					client.say(target, `${uname} tried to stab ${message}, but command 'stab' is not found. It can be installed with 'sudo apt-get install stab'`);
+					break;
+				case "@conflicteddweet":
+				case "conflicteddweet":
+					client.say(target, `${uname} tried to stab ${message} but you decided to Deliverance off the hook instead of wait for your teammate, so now you must die.`);
+					break;
+
 			};
 			break;
 		case "dark":
 			client.say(target, `ducxhbcvuidgxvudgbvayuisbiugxauivgxibcausgdcaursgfigsicbiusdfvbyuv Thank you darksidegaming247 for scaring the crap out of me! I'm totally not having a forking heart attack.`);
 			break;
-
 		case "spoilers":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
 				if (configuration.commands["admin-commands"] == "true") {
@@ -446,7 +557,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 
 		case "website":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
-				client.say(target, `Fun Fact: Henzoid has a website! henzoid.wixsite.com/website				I refuse to use the henzoid.com domain because that would imply henzoid is a professional, and we can't have that! wait fuck`)
+				client.say(target, `Fun Fact: Henzoid has a website! henzoid.wixsite.com/website				I refuse to use the henzoid.com domain because that would imply henzoid is a professional, and we can't have that! wait fuck`);
 			}
 			break;
 
@@ -461,14 +572,19 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 		case "simps":
 		case "simp":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
-				client.say(target, `S.I.M.P.S is an AI henzoid made totally not based on Portal 2's GLAdOS. SIMPS stands for: The Simulated Intelligence Multiple Personality System, which is an AI responsible for the development of advanced learning programs.`)
+				client.say(target, `S.I.M.P.S is an AI henzoid made totally not based on Portal 2's GLAdOS. SIMPS stands for: The Simulated Intelligence Multiple Personality System, which is an AI responsible for the development of advanced learning programs.`);
 			}
 			break;
 		case "bit-wanderer":
 		case "bitwanderer":
 		case "album":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
-				client.say(target, `HENZOID HAS A NEW ALBUM AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA! You can check it out at the link that is so kindly placed right here -> youtube.com/watch?v=Apq-jgJtsVo`)
+				client.say(target, `HENZOID HAS A NEW ALBUM AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA! You can check it out at the link that is so kindly placed right here -> youtube.com/watch?v=Apq-jgJtsVo`);
+			}
+			break;
+		case "titty-map":
+			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
+				client.say(target, `${uname} -> Titty map never will be a real map. For the love of god please stop asking about it!`);
 			}
 			break;
 
@@ -491,7 +607,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 							break;
 					}
 				} else {
-					client.say(target, `@${uname} -> You do not have the required permission to use this command.`)
+					client.say(target, responseTemplates.noPermission);
 				}
 			}
 			break;
@@ -501,7 +617,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 				configuration.commands["admin-commands"] = cmdState;
 				client.say(target, `${uname} Module admin-commands is now set to ${cmdState}`);
 			} else {
-				client.say(target, `@${uname} -> You do not have the required permission to use this command.`);
+				client.say(target, responseTemplates.noPermission);
 			}
 			break;
 		case "henzoid-cmds":
@@ -521,7 +637,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 						break;
 				}
 			} else {
-				client.say(target, `@${uname} -> You do not have the required permission to use this command.`);
+				client.say(target, responseTemplates.noPermission);
 			}
 			break;
 		case `prime`:
@@ -532,23 +648,80 @@ function onMessageHandler(target, userstate, msg, self, tags, user, context) {
 			break;
 		case `lockdown`:
 		case `ld`:
-		case `bot`:
 		case `lock`:
-			if (uname == "demonitized_boi" || uname == "peter_lgbt") {
-				channelLockdownHandler(target, userstate, msg, self, tags, user, context);
+			if (uname == "demonitized_boi" || badges.includes("broadcaster") || badges.includes("moderator")) {
+				channelLockdownHandler(target, userstate, msg, self, tags, user);
 			} else {
-				client.say(target, `@${uname} -> You do not have the required permission to use this command.`);
+				client.say(target, responseTemplates.noPermission);
 			}
 			break;
 		case `2trucks`:
 		case `twotrucks`:
-			client.say(target, `Two trucks having sex!`)
+			if (target == "#strawberys") {
+				client.say(target, `${uname} -> Sorry! This command is disabled here.`);
+				return false;
+			} else {
+				client.say(target, `Two trucks having sex!`);
+			}
+			break;
+
+
+
+
+			/* Henzoid Map Download Commands */
+		case `greyscale`:
+		case `grayscale`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download Grayscale here! -> ${configuration.operation.status.maps.grayscale}`);
+			};
+			break;
+		case `trolley`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download The Trolley Problem here! -> ${configuration.operation.status.maps.trolley}`);
+			};
+			break;
+		case `dripdrop`:
+		case `drip`:
+		case `drop`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download Drip Drop here! -> ${configuration.operation.status.maps.dripdrop}`);
+			};
+			break;
+		case `buildinggame`:
+		case `tbg`:
+		case `thebuildinggame`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download The Building Game here! -> ${configuration.operation.status.maps.buildinggame}`);
+			};
+			break;
+		case `miscommunications`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download Miscommunications here! -> ${configuration.operation.status.maps.miscommunications}`);
+			};
+			break;
+		case `sixteensquared`:
+		case `16squared`:
+		case `16^2`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download 16^2 here! -> ${configuration.operation.status.maps.sixteensquared}`);
+			};
+			break;
+		case `tm3`:
+		case `twitchmakesaminecraftmap`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download Twitch Makes A Minecraft Map here! -> ${configuration.operation.status.maps.tm3}`);
+			};
+			break;
+		case `eddie`:
+			if (target == "#hen_zoid") {
+				client.say(target, `You can download Eddie the Adventurer here! -> ${configuration.operation.status.maps.eddie}`);
+			};
 			break;
 
 	}
 }
 
-function debugCommand(target, userstate, msg, self, tags, user, context) {
+function debugCommand(target, userstate, msg, self, tags, user) {
 
 	let prefixRegex = new RegExp(
 		`^(${escapeRegex(prefix)})\\s*`
@@ -567,13 +740,13 @@ function debugCommand(target, userstate, msg, self, tags, user, context) {
 
 	switch (subCommand) {
 		default:
-			client.say(target, `${uname} You need to use a valid sub-command!`);
+			client.say(target, `${uname} -> You need to use a valid sub-command!`);
 			break;
 		case "emote-set":
 			client.say(target, `I have the following Emote sets unlocked: ${sets}`);
 			break;
 		case "joined-channels":
-			client.say(target, `I am currently lurking in ${configuration.operation.channels.length} channels`);
+			client.say(target, `I am currently lurking in ${client.getChannels().length} channels`);
 			break;
 		case "ping":
 			client.ping();
@@ -638,72 +811,93 @@ function debugCommand(target, userstate, msg, self, tags, user, context) {
 					console.warn(`Error while joining channel. ${err}`)
 				});
 			break;
+		case "eval":
+		case "evaluate":
+			message = args.join(" ");
+			try {
+				eval(`${message}`);
+			} catch (err) {
+				console.warn(`Error while Evaluating command. ${err}`);
+				client.say(target, `${uname} -> An error occurred while running the Eval command. Check console for details.`);
+			}
+
 	}
 }
 
-function henzoidMapCommand(target, userstate, msg, self, tags, user, context, uname, args, rawargs) {
-	let searchTerm = args.join(" ");
-	searchTerm = searchTerm.toLowerCase();
-	switch(searchTerm) {
-		default:
-		case "current":
-			client.say(target,
-				`Henzoid's current map is: ${configuration.operation.status.map.name}. ${configuration.operation.status.map.name} is ${configuration.operation.status.map.desc}. Make sure to join the Discord and follow for updates on this and future maps!`)
-		break;
-		case "tm3":
-		case "twitch makes a minecraft map":
-			client.say(target, `Henzoid's map "Twitch Makes a Minecraft Map" can be downloaded`);
+// function henzoidMapCommand(target, userstate, msg, self, tags, user, context, uname, args, rawargs) {
+// 	let searchTerm = args.join(" ");
+// 	searchTerm = searchTerm.toLowerCase();
+// 	switch (searchTerm) {
+// 		default:
+// 		case "current":
+// 			client.say(target,
+// 				`Henzoid's current map is: ${configuration.operation.status.map.name}. ${configuration.operation.status.map.name} is ${configuration.operation.status.map.desc}. Make sure to join the Discord and follow for updates on this and future maps!`)
+// 			break;
+// 		case "tm3":
+// 		case "twitch makes a minecraft map":
+// 			client.say(target, `Henzoid's map "Twitch Makes a Minecraft Map" can be downloaded`);
+// 			break;
+// 		case "miscommunications":
+
+// 			break;
+// 		case "squared":
+// 		case "16squared":
+// 		case "15squared":
+// 		case "14squared":
+// 		case "12squared":
+// 		case "10squared":
+
+// 			break;
+// 		case "bee":
+// 		case "bees":
+
+// 			break;
+// 		case "grayscale":
+// 		case "greyscale":
+
+// 			break;
+// 		case "the building game":
+// 		case "tbg":
+
+// 			break;
+// 		case "idkwmtm":
+// 		case "i dont know what map to make":
+// 		case "i don't know what map to make":
+
+// 			break;
+// 		case "blackbastion":
+// 		case "black bastion":
+
+// 			break;
+
+
+// 	}
+// }
+
+function onPunishmentHandler(channel, username, reason, userstate, duration) {
+	switch (channel) {
+		case "peter_lgbt":
+		case "#peter_lgbt":
+			request()
 			break;
-		case "miscommunications":
-
-		break;
-		case "squared":
-		case "16squared":
-		case "15squared":
-		case "14squared":
-		case "12squared":
-		case "10squared":
-
-		break;
-		case "bee":
-		case "bees":
-		
-		break;
-		case "grayscale":
-		case "greyscale":
-		
-		break;
-		case "the building game":
-		case "tbg":
-
-		break;
-		case "idkwmtm":
-		case "i dont know what map to make":
-		case "i don't know what map to make":
-		
-		break;
-		case "blackbastion":
-		case "black bastion":
-
-		break;
-		case "titty map":
-			client.say(target, `${uname} -> Titty map never will be a real map. For the love of god please stop asking about it!`);
-		break;
-
 	}
 }
 
-function channelLockdownHandler(target, userstate, msg, self, tags, user, context) {
+
+function channelLockdownHandler(target, userstate, msg, self, tags, user) {
 	var uname = userstate["username"];
 	if (chnlLockdown == false) {
 		client.say(target, `${uname} -> The channel is now locked down.`);
 		chnlLockdown = true;
 		client.subscribers(target);
-		client.clear(target);
+		client.emoteonly(target);
+		client.followersonly(target, "3 months");
 	} else if (chnlLockdown == true) {
-		client.say(target, `${uname} -> The channel is no longer locked down. Happy Chatting!`);
+		client.say(target, `${uname} -> The channel is no longer locked down.`);
 		chnlLockdown = false;
 		client.subscribersoff(target);
+		client.emoteonlyoff(target);
+		client.followersonlyoff(target);
 	}
 }
 
@@ -716,17 +910,19 @@ function onFollowHandler() {
 }
 
 function onGiftSubUpgradeHandler(target, username, sender, userstate) {
-	if (target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		client.say(target, `${username} is continuing the gift sub they got from ${sender}!`)
 	}
 }
 
 
 
+
+
 function onCheerHandler(target, userstate, message) {
 	let sender = userstate["username"];
 	let bits = userstate["bits"];
-	if (target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		if (bits == "69") {
 			client.say(target, `${sender} just cheered ${bits} bits! ngl thats pretty nice`);
 		} else if (bits == "420") {
@@ -764,7 +960,7 @@ function onCheerHandler(target, userstate, message) {
 
 function onSubHandler(target, username, method, message, userstate) {
 	console.log(target);
-	if (target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		switch (method.plan) {
 			case "Prime":
 				client.say(`${target}`, `PrimeMe ${username} just subscribed with Prime Gaming! PrimeMe`);
@@ -786,15 +982,15 @@ function onSubHandler(target, username, method, message, userstate) {
 }
 
 function onHostedHandler(target, username, viewers, autohost) {
-	console.log(`${username} just hosted ${target} with ${viewers} viewers!`)
-	if (target == "Mrquestion11" || target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	console.log(`${username} just hosted ${target} with ${viewers} viewers!`);
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		client.say(target, `${username} just hosted us with ${viewers} viewers!`);
 	}
 }
 
 function onResubHandler(target, username, months, message, userstate, method) {
 	console.log(target);
-	if (target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 
 		let limelinzmHatesTheSubStreak = ~~userstate["msg-param-cumulative-months"];
 		switch (method.plan) {
@@ -818,7 +1014,7 @@ function onResubHandler(target, username, months, message, userstate, method) {
 }
 
 function onGiftSubHandler(target, username, streakMonths, recipient, methods, userstate) {
-	if (target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		let senderCount = ~~userstate["msg-param-sender-count"];
 		let recievedUser = userstate["msg-param-recipient-user-name"];
 		client.say(target, `HOLY MOLY! Thank you ${username} for gifting a sub to ${recipient}!`);
@@ -826,13 +1022,41 @@ function onGiftSubHandler(target, username, streakMonths, recipient, methods, us
 }
 
 function onGiftSubMysteryHandler(target, username, numbOfSubs, methods, userstate) {
-	if (target == "#hen_zoid" || target == "#pastelsdarling" || target == "#reportcardsmc" || target == "#quimbly3" || target == "#demonitized_boi" || target == "#trollfartsvt" || target == "#walkernewton" || target == "#duckhunterone" || target == "#peter_lgbt") {
+	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		client.say(target, `HOLY MOLY! Thank you ${username} for gifting ${numbOfSubs} subs to ${target}!`);
 	}
 }
 
-function onModerationHandler(channel, user, reason, userstate, time) {
-
+function onModerationHandler(type, channel, user, reason, userstate, time) {
+	if (channel == "#peter_lgbt" || channel == "peter_lgbt") {
+		let webhookOptions = {
+			'method': 'POST',
+			'url': 'https://canary.discord.com/api/webhooks/850507922320654396/fuvHNKdobtNvGftaz7WvAFOagzzLOzHUxG0mMh6EZ_IhVoDA6qqLeQx-vUpaZu0kYlMp',
+			'headers': {
+				'Content-Type': 'application/json',
+				'Cookie': '__dcfduid=62cab842f86145f9a4a271527588b7fa'
+			},
+			"body": JSON.stringify({
+				"username": "Twitch moderation logging",
+				"embeds": [{
+					"description": "Logging for Peter's twitch chat",
+					"type": "rich",
+					"title": "Peter_LGBT's auto-mod system",
+					"fields": [{
+							"name": "Username",
+							"value": user
+						},
+						{
+							"name": "Moderation action",
+							"value": type
+						}
+					]
+				}],
+				"footer": "More data coming Soon:tm:"
+			})
+		}
+		request(webhookOptions);
+	}
 }
 
 // Function called when the "dice" command is issued
@@ -847,8 +1071,23 @@ function onConnectedHandler(addr, port) {
 	console.log(`* Platform:  ${os.platform()}`);
 	console.log(`* Architecture: ${os.arch()}`);
 	console.log(`* Type: ${os.type()}`);
-	console.log(`* Memory: ${os.freemem()} free of ${os.totalmem()} total`);
+	let freeMemMB = os.freemem() / 1048576;
+	let totalMemMB = os.totalmem() / 1048576;
+	console.log(`* Memory: ${Math.round(freeMemMB)} MB free of ${Math.round(totalMemMB)} MB`);
 	console.log(`* Uptime: ${os.uptime()}`);
+	// console.log(`* Version: ${os.version()}`);
+	// banMaliciousBots();
+
+}
+
+function banMaliciousBots() {
+	let autoBanRsn = "Malicious bot account | Clicking on profile will get your IP grabbed";
+	let autoBanChnl = "#demonitized_boi"; /* Default this to my channel unless actively using the function */
+	configuration.autoBanList.forEach(user => {
+		setTimeout(() => {
+			client.ban(autoBanChnl, user, autoBanRsn);
+		}, 3000);
+	})
 }
 
 var session = require("express-session");
@@ -863,6 +1102,9 @@ const {
 const {
 	send
 } = require("process");
+const {
+	raw
+} = require("express");
 
 const TWITCH_CLIENT_ID = `x12ea2y7tdpl3bxysv9si4emtxzcen`;
 const TWITCH_SECRET = process.env.CLIENT_SECRET;
@@ -883,6 +1125,11 @@ app.use(passport.session());
 
 
 
+app.post("/api/interactions", (req, res) => {
+
+	console.log(req);
+
+})
 // Bypass passport profile function to get user profile from Twitch API, then eventually store it with SQL
 OAuth2.prototype.userProfile = function (accessToken, done) {
 	var options = {
@@ -1035,6 +1282,6 @@ app.get("/", function (req, res) {
 	}
 });
 
-app.listen(3000, function () {
-	console.log("Twitch auth listening on port 3000!");
+app.listen(25938, function () {
+	console.log("Twitch auth listening on port 25938!");
 });
