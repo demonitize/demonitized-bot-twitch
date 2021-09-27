@@ -18,6 +18,14 @@
 
 `??clip [clip title] [<time to start> <duration | time to end>]` - Creates a clip of the channel. Duration defaults to clipping last 30 seconds. Title defaults to the channel's current title. **THIS COMMAND IS DISABLED UNTIL I ACTUALLY DECIDE TO ADD THE CODE THAT RUNS IT**
 
+`??pronouns` - Lists the streamer's pronouns.
+
+`??so <username>` - Shouts Out the user who you mention
+
+`??ad` - Runs an ad for 69 seconds. Nice (Requires Editor Permissions)
+
+`??ld` - Locks down the channel with Subs Only Mode, Emote Only Mode, and Max Followers Only Mode
+
 ## Henzoid Commands ##
 
 ---
@@ -49,6 +57,14 @@
 `??spoilers` - Posts a message asking people to not post spoilers.
 
 `??spam` - Floods the chat with *"[SPOILER ABOVE]"*. If you abuse this I will revoke your access to the entire bot.
+
+`??ree` - Posts a message asking people not to use the term "ree"
+
+`??simps` - Posts a message explaining what S.I.M.P.S. is
+
+`??album` - Posts a message about Henzoid's album Bit Wanderer
+
+`??titty-map` - No
 
 ---
 # Features #
