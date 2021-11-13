@@ -12,7 +12,8 @@
 			"#treat",
 			"#tianyivt",
 			"#r00tkitt",
-			"#conflicteddweet"
+			"#conflicteddweet",
+			"#whowaltwhere"
 		],
 		"whitelisted": {
 			"words": [],
@@ -62,9 +63,10 @@
 		"#demonitized_boi": "he/him",
 		"#reportcardsmc": "she/they",
 		"#conflicteddweet": "he/they",
-		"#hen_zoid": "he/they",
+		"#hen_zoid": "Any (they/them prefered)",
 		"#thecasperofjacks": "he/him",
-		"#pastelsdarling":"she/her"
+		"#pastelsdarling":"she/her",
+		"#whowaltwhere":"he/him"
 	},
 	"operation": {
 		"status": {
@@ -86,6 +88,7 @@
 		},
 		"broadcastEnabledChannels": [
 			"#demonitized_boi",
+			"#quimbly3",
 			"#pastelsdarling",
 			"#duckhunterone",
 			"#walkernewton",
@@ -101,7 +104,8 @@
 			"#reportcardsmc",
 			"#r00tkitt",
 			"#conflicteddweet",
-			"#grimett27"
+			"#grimett27",
+			"#whowaltwhere"
 		],
 		"channels": [
 			"demonitized_boi",
@@ -116,6 +120,7 @@
 			"peter_lgbt",
 			"octogaster",
 			"r00tkitt",
+			"whowaltwhere",
 			"theneoncryptid",
 			"pastelsdarling",
 			"duckhunterone",
@@ -125,10 +130,12 @@
 			"trumpetplayer2d2",
 			"pastelisapeach",
 			"flintlockkatze",
+			"funsquidtag",
 			"murkyrulez",
 			"sweetbug03",
 			"conflicteddweet",
 			"oceanasky",
+			"ninaarii",
 			"alabamalife",
 			"strawberys",
 			"brigoose",
@@ -206,8 +213,8 @@
 		"verdux-commands": true
 	},
 	"auth": {
-		"client-id": "",
-		"token": ""
+		"client-id": "x12ea2y7tdpl3bxysv9si4emtxzcen",
+		"token": "4xdod5uklfkpwm38ad38lsz6s9fvk1"
 	},
 	"autoBanList": [
 		"clickonmeplease",
