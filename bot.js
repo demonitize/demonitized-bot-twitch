@@ -11,8 +11,6 @@ const prefix = "??";
 const configuration = require('./config.json');
 const packageJson = require('./package.json');
 // var henzoidNightbot = 1; 
-var quimSwear = 35;
-var quimCrash = 2; // too lazy to set up SQL for swear counter and crash counter. manually change every week
 let phasmoCode = `000000`; // Default to unset code.
 var chnlLockdown = false; // Default to lockdown being disabled.
 
@@ -45,7 +43,7 @@ const opts = {
 		secure: true,
 	},
 	identity: {
-		username: `demonitized_bot`,
+		username: `replace_this_with_your_bot_username`,
 		password: process.env.PASSWORD
 	},
 	channels: configuration.operation.channels
@@ -69,6 +67,11 @@ client.on('ban', onModerationHandler);
 client.on('timeout', onModerationHandler);
 client.on('messagedeleted', onModerationHandler);
 client.on('clearchat', onModerationHandler);
+client.on('join', (target, username, self) => {
+	if (target == "quimbly3" || target == "#quimbly3" && self) {
+		client.part("#quimbly3")
+	} // This exists as quimbly does not want my bot in her chat, so i implemented this to make it leave the channel.
+})
 client.on("emotesets", (sets, obj) => {
 	// Here are the emotes I can use:
 	var emotesets = {
@@ -134,7 +137,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 	// if (target == "#demonitized_boi") console.log(rawargs[9]);
 
 	/*
-			Scam bot message goes here for code reference
+			Scam bot messages goes here for code reference
 
  			Wanna become famous? Buy followers, primes and viewers on https://cutt.us/getfollows ( bigfollows . com )!
 
@@ -154,7 +157,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				/* Post to webhook so I can ban them in other channels at a later date */
 				let webhookOptions = {
 					'method': 'POST',
-					'url': 'https://canary.discord.com/api/webhooks/849129837028180028/fIUkk2qo6F5GC2JiaR74XYnolJzFcjS-e_jHzKHWcnsq09C5EhwQE_cBq6EacF-ghPRo',
+					'url': 'no',
 					'headers': {
 						'Content-Type': 'application/json',
 						'Cookie': '__dcfduid=62cab842f86145f9a4a271527588b7fa'
@@ -260,25 +263,13 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case "pronouns":
 			switch (target) {
 				case "#r00tkitt":
-					client.say(target, responseTemplates.pronouns);
-					break;
 				case "#treat":
-				case "#tianyivt":
-					client.say(target, responseTemplates.pronouns);
-					break;
 				case "#reportcardsmc":
-					client.say(target, responseTemplates.pronouns);
-					break;
 				case "#demonitized_boi":
-					client.say(target, responseTemplates.pronouns);
-					break;
 				case "#hen_zoid":
-					client.say(target, responseTemplates.pronouns);
-					break;
 				case "#conflicteddweet":
-					client.say(target, responseTemplates.pronouns);
-					break;
 				case "#pastelsdarling":
+				case "#whowaltwhere":
 					client.say(target, responseTemplates.pronouns);
 					break;
 			}
@@ -354,12 +345,6 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case "version":
 			client.action(target, `Bot currently on version ${packageJson.version}`);
 			break;
-			// case "rickashley":
-			//   client.say(
-			//     target,
-			//     "https://cdn.discordapp.com/attachments/624685352749105152/708480168464875520/rickashley.mp4"
-			//   );
-			//   break;
 		case "help":
 			client.say(
 				target,
@@ -527,7 +512,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 
 		case "mcstacker":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
-				client.say(target, "Do you want to make your own Minecraft maps? Do you strugle with commands? Do you wish there was an easy way to get extremely fucking overpowered items? If you do, then mcstacker.net is for you!");
+				client.say(target, "Do you want to make your own Minecraft maps? Do you strugle with commands? Do you wish there was an easy way to get extremely fucking overpowered items, like a sharpness 32,767 cod? If you do, then mcstacker.net is for you!");
 			} else {
 				return;
 			}
@@ -543,7 +528,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 
 		case "discord":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
-				client.say(target, "Did you know that Henzoid has a Discord? Wait you did... Well he does, and it's free to join! Come on down and join The Henzone! discord.com/invite/Gtj6MeD");
+				client.say(target, "Did you know that Henzoid has a Discord? Wait you did... Well they do, and it's free to join! Come on down and join The Henzone! discord.com/invite/Gtj6MeD");
 			} else {
 				return
 			}
@@ -557,7 +542,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 
 		case "website":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
-				client.say(target, `Fun Fact: Henzoid has a website! henzoid.wixsite.com/website				I refuse to use the henzoid.com domain because that would imply henzoid is a professional, and we can't have that! wait fuck`);
+				client.say(target, `Fun Fact: Henzoid has a website! Check it out here -> henzoid.com`);
 			}
 			break;
 
@@ -1031,7 +1016,7 @@ function onModerationHandler(type, channel, user, reason, userstate, time) {
 	if (channel == "#peter_lgbt" || channel == "peter_lgbt") {
 		let webhookOptions = {
 			'method': 'POST',
-			'url': 'https://canary.discord.com/api/webhooks/850507922320654396/fuvHNKdobtNvGftaz7WvAFOagzzLOzHUxG0mMh6EZ_IhVoDA6qqLeQx-vUpaZu0kYlMp',
+			'url': 'no',
 			'headers': {
 				'Content-Type': 'application/json',
 				'Cookie': '__dcfduid=62cab842f86145f9a4a271527588b7fa'
@@ -1106,9 +1091,9 @@ const {
 	raw
 } = require("express");
 
-const TWITCH_CLIENT_ID = `x12ea2y7tdpl3bxysv9si4emtxzcen`;
+const TWITCH_CLIENT_ID = `x12ea2y7tdpl3bxysv9si4emtxzcen`; // this is just random 
 const TWITCH_SECRET = process.env.CLIENT_SECRET;
-const SESSION_SECRET = `i[?'Xidk2ik/kR`;
+const SESSION_SECRET = `i[?'Xidk2ik/kR`; // also random
 const CALLBACK_URL = `https://demonitized-api.glitch.me`;
 
 // Initialize Express and middlewares AKA fucking hell
