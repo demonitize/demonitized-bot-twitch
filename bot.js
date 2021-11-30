@@ -94,7 +94,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 
 	if (self) return; // Ignore messages from the bot;
 	if (target == "#hen_zoid" && userstate["username"] == "nightbot") {
-		client.say("#hen_zoid", "Thank you Nightbot"); /* Thanks Nightbot in Henzoid's chat because for some fucking reason, he does that */
+		client.say("#hen_zoid", "Thank you Nightbot"); /* Thanks Nightbot in Henzoid's chat because for some fucking reason, they do that */
 	}
 
 	/* Casper's 'awoo' mode is disabled because its kind of laggy on the system. I do not know why. Fix Soon™ */
