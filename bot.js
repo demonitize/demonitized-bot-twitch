@@ -10,7 +10,6 @@ const escapeRegex = str => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const prefix = "??";
 const configuration = require('./config.json');
 const packageJson = require('./package.json');
-// var henzoidNightbot = 1; 
 let phasmoCode = `000000`; // Default to unset code.
 var chnlLockdown = false; // Default to lockdown being disabled.
 
@@ -36,14 +35,14 @@ const opts = {
 	},
 	connection: {
 		reconnect: true,
-		maxReconnectAttempts: 10,
+		maxReconnectAttempts: Infinity,
 		maxReconnectInterval: 30000,
 		reconnectDecay: 1.5,
 		reconnectInterval: 5000,
 		secure: true,
 	},
 	identity: {
-		username: `replace_this_with_your_bot_username`,
+		username: `demonitized_bot`,
 		password: process.env.PASSWORD
 	},
 	channels: configuration.operation.channels
@@ -68,18 +67,31 @@ client.on('timeout', onModerationHandler);
 client.on('messagedeleted', onModerationHandler);
 client.on('clearchat', onModerationHandler);
 client.on('join', (target, username, self) => {
-	if (target == "quimbly3" || target == "#quimbly3" && self) {
-		client.part("#quimbly3")
-	} // This exists as quimbly does not want my bot in her chat, so i implemented this to make it leave the channel.
+	if (self && configuration.operation.blacklisted.includes(target)) {
+		client.part(target);
+		console.warn(`Left channel ${target} as I am blacklisted from joining this channel.`);
+	}
+});
+client.on("ban", (target, uname, reason, userstate) => {
+	switch (target) {
+		case "#pastelsdarling":
+			client.say(target, `${uname} just got BANNED from Pastel's chat. That's not very Pog Champ behavior`);
+			break;
+		case "#r00tkitt":
+			client.ban("#chloeincarnate", uname, `Ban Sync from ${target} | ${reason}`).catch((err) => {console.warn(err)});;
+			break;
+		case "#chloeincarnate":
+			client.ban("#r00tkitt", uname, `Ban Sync from ${target} | ${reason}`).catch((err) => {console.warn(err)});
+			break;
+	}
 })
+client.on("redeem", onRedeemHandler);
 client.on("emotesets", (sets, obj) => {
 	// Here are the emotes I can use:
 	var emotesets = {
 		sets: sets,
 		obj: obj
 	}
-	console.log(`Unlocked Emote Sets: ${emotesets.sets}`);
-	// console.log(`Allowed Emotes: ${obj}`);
 });
 // Connect to Twitch:
 client.connect();
@@ -91,40 +103,26 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 	var uname = userstate["username"];
 	var dname = userstate["display-name"];
 	var badges = JSON.stringify(userstate["badges"]);
+	var msgID = userstate["id"];
 
 	if (self) return; // Ignore messages from the bot;
 	if (target == "#hen_zoid" && userstate["username"] == "nightbot") {
 		client.say("#hen_zoid", "Thank you Nightbot"); /* Thanks Nightbot in Henzoid's chat because for some fucking reason, they do that */
 	}
 
-	/* Casper's 'awoo' mode is disabled because its kind of laggy on the system. I do not know why. Fix Soon™ */
-
-	// if (target == "#thecasperofjacks" && configuration.commands["awoo-mode"] == true) {
-	// 	let randomizer = Math.floor(Math.random() * 9) + 1;
-	// 	switch (randomizer) {
-	// 		case 6:
-	// 		case 9:
-	// 			client.say(target, `Awooooo!!!`);
-	// 			break;
-	// 	}
-	// }
-
-
 	// if (context["custom-reward-id"] == null)
 
 
-	// var msgID = userstate["target-msg-id"];
 
 	// let channelClean = target.split("#");
 	// channelClean = channelClean[1]	
 
-	// var args = msg.split(" ")
-
-
 
 	var responseTemplates = {
 		"pronouns": `${dname} -> Thank you for asking about my pronouns! My pronouns are currently ${configuration.pronouns[target]}! You can set your pronouns by visiting pronouns.alejo.io/chrome`,
-		"noPermission": `${uname} -> I'm sorry, but you do not have the required permission to use this command. Please contact Demonitized_Boi if you believe this is an error`
+		"noPermission": `${uname} -> I'm sorry, but you do not have the required permission to use this command. Please contact Demonitized_Boi if you believe this is an error`,
+		"blockedWord": `${uname} -> Please do not use that word here`,
+		"deadnames": `${uname} -> Please do not use people's deadnames here. It is considered disrespectful. bleedPurple`
 	}
 
 	let rawargs = msg
@@ -137,15 +135,31 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 	// if (target == "#demonitized_boi") console.log(rawargs[9]);
 
 	/*
-			Scam bot messages goes here for code reference
+			Scam bot message goes here for code reference
 
  			Wanna become famous? Buy followers, primes and viewers on https://cutt.us/getfollows ( bigfollows . com )!
 
 			Wanna become famous? Buy followers, primes and viewers on bigfollows .com !
 
 		*/
+
+	const regex = new RegExp(`(${configuration.bannedWords})`, "i");
+	const linkRegex = new RegExp(`(${configuration.moderation.blacklisted.links})+`, "i");
+	const deadnameRegex = new RegExp(`(${configuration.deadnames})`);
+
+	if (target == "#r00tkitt") {
+		if (deadnameRegex.test(msg)) {
+			if (badges.includes("broadcaster") || badges.includes("moderator")) {
+				client.say(target, responseTemplates.deadnames);
+				return;
+			} else {
+				client.deletemessage(target, msgID);
+				client.say(target, responseTemplates.deadnames);
+			}
+		}
+	}
 	if (configuration.moderation.channels.includes(target)) {
-		if (msg.includes("cutt.ly/") || rawargs[9] == "bigfollows" || rawargs[9] == "bigfollow" || rawargs[11] == "bigfollows" || rawargs[11] == "bigfollow") {
+		if (linkRegex.test(msg)) {
 			if (badges.includes("broadcaster") || badges.includes("moderator") || badges.includes("vip") || badges.includes("subscriber") || badges.includes("partner")) {
 				console.log(`Ignoring ${dname} as they are immune to automod`);
 				return;
@@ -157,10 +171,9 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				/* Post to webhook so I can ban them in other channels at a later date */
 				let webhookOptions = {
 					'method': 'POST',
-					'url': 'no',
+					'url': null, /* Plain Text Webhook URL */
 					'headers': {
-						'Content-Type': 'application/json',
-						'Cookie': '__dcfduid=62cab842f86145f9a4a271527588b7fa'
+						'Content-Type': 'application/json'
 					},
 					"body": JSON.stringify({
 						"username": "Twitch moderation logging",
@@ -175,7 +188,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 							}]
 						}],
 						"embeds": [{
-							"description": "Logging for auto-mod system",
+							"description": "Logging for AutoMod system",
 							"type": "rich",
 							"title": "Scam Link auto-ban",
 							"fields": [{
@@ -196,6 +209,39 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				}
 				request(webhookOptions);
 			}
+		} else if (regex.test(msg)) {
+			if (badges.includes("broadcaster") || badges.includes("moderator")) return;
+			client.deletemessage(target, msgID);
+			client.say(target, responseTemplates.blockedWord);
+			if (target == "#hen_zoid") {
+				let henzoidWebhookOpts = {
+					'method': 'POST',
+					'url': null, /* this was in plain text but its gone now so HA */
+					'headers': {
+						'Content-Type': 'application/json'
+					},
+					"body": JSON.stringify({
+						"username": "Demonitized's Demonic Discipline Diaster",
+						"embeds": [{
+							"description": "Logging for AutoMod system",
+							"type": "rich",
+							"title": "Blocked Term Auto-Delete",
+							"fields": [{
+									"name": "Username",
+									"value": uname
+								},
+								{
+									"name": "Message Content",
+									"value": msg
+								}
+							],
+							"timestamp": new Date(),
+							"color": 8325375
+						}]
+					})
+				}
+				// request(henzoidWebhookOpts);
+			}
 		}
 	}
 
@@ -206,9 +252,6 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 
 	if (!prefixRegex.test(msg)) return;
 
-
-	// var args = msg.split(" ");
-
 	let args = msg
 		.slice(matchedPrefix.length)
 		.trim()
@@ -216,23 +259,20 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 
 	const command = args.shift().toLowerCase();
 
-	const permissions = {
-		"broadcaster": badges["broadcaster"],
-		"mod": badges["moderator"],
-		"vip": badges["vip"],
-		"subscriber": badges["subscriber"],
-		"bits": badges["bits"],
-		"admin": badges["admin"],
-		"owner": uname == "demonitized_boi"
-	}
-
-
 	// if (configuration.operation.blacklisted.includes(uname)) {
 	// 	client.say(target, `I'm sorry ${uname} but you are blacklisted from using the bot. Please contact DEMONITIZED BOI#6799 on Discord to appeal`);
 	// }
 
 
 	switch (command) {
+		case "gdd":
+		case "god-damnit-demonitized":
+		case "demonitized":
+			client.say(target, `${uname} -> As one of @demonitized_boi's friends once said, "God Damn It Demonitized"`);
+			break;
+		case "top":
+			client.say(target, `"PUT ME IN THE BASEMENT JUNO" - TopQueen202027 1/15/2022`);
+			break;
 		case "riri":
 		case "bagged-milk":
 		case "milk":
@@ -246,7 +286,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 			client.say(target, `"You cannot scare me with the 'yet'" - Strawberys 9/20/2021`);
 			break;
 		case "frosty":
-			client.say(target, `"Back in my dad we filled in every last block with our bare hands" - Frosty 8/2/2021`)
+			client.say(target, `"Back in my dad we filled in every last block with our bare hands" - Frosty 8/2/2021`);
 			break;
 		case "pastel":
 			client.say(target, `"Touch the butt" - Pastel 8/24/2021`);
@@ -270,6 +310,10 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				case "#conflicteddweet":
 				case "#pastelsdarling":
 				case "#whowaltwhere":
+				case "#queenvammatar":
+				case "#junomeee":
+				case "#chloeincarnate":
+				case "#ember4657":
 					client.say(target, responseTemplates.pronouns);
 					break;
 			}
@@ -354,8 +398,11 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case "owner":
 			client.say(target, "Bot owned by DEMONITIZED_BOI");
 			break;
+		case "inventory":
+		case "itsthezbutton":
+			client.say(target, `${uname} -> Glitched your hotbar to show your entire inventory? Just push the Z button!`);
+			break;
 		case "treasure":
-		case "pastel":
 		case "pastelissmartnt":
 			client.say(target, `${uname} -> The easiest way to find Treasure chests in Minecraft is by using the F3 menu and looking for "Chunk 9 * 9". The * can be any number. Only the first and last number matter. Happy Treasure Hunting!`);
 			break;
@@ -372,7 +419,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 			client.say(target, "The squid has come to scare");
 			break;
 		case "arson":
-			client.say(target, `HypeFire HypeFire HypeFire BURN DA CHAT HypeFire HypeFire HypeFire`);
+			client.say(target, `panicBasket panicBasket panicBasket EMBER IS LIGHTING THINGS ON FIRE panicBasket panicBasket panicBasket`);
 			break;
 		case "stab":
 			let message = args[0]; // The username of the person you are trying to stab.
@@ -380,16 +427,13 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 			switch (messageLwrCase) {
 				default:
 					client.say(target, `${uname} stabbed ${message}. LUL Imagine not having a shield LUL`);
-					if (permissions.broadcaster || permissions.mod || permissions.vip || uname == `demonitized_boi` /* This is only here for debugging. */ ) {
-						client.timeout(target, message, 5, `Terminated by stabbing`);
-					};
 					break;
 				case `${uname}`:
 				case `@${uname}`:
 					client.say(target, "You can't stab yourself silly! That would be rude.");
 					break;
-				case "walkernewton":
-				case "@walkernewton":
+				case "walkerhatesyou ":
+				case "@walkerhatesyou ":
 					client.say(target, `${uname} tried to stab ${message} but he did not give you consent so...`);
 					break;
 				case "pastelsdarling":
@@ -400,17 +444,17 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				case "@sisterdarling":
 					client.say(target, `${uname} tried to stab ${message}, but YOU CAN'T STAB PASTEL'S SISTER because that would not be very poglin.`);
 					break;
-				case "quimbly3":
-				case "@quimbly3":
-					client.say(target, `${uname} tried to stab ${message} but she already blew up the building game, so stabbing her won't end well.`);
-					break;
 				case "strawberys":
 				case "@strawberys":
-					client.say(target, `${uname} tried to stab ${message} but she's already going to die since she can't survive a single stream, so there's really no need to stab her.`);
+					client.say(target, `${uname} tried to stab ${message} but she's probably going to burn down the kitchen so...`);
 					break;
 				case "demonitized_boi":
 				case "@demonitized_boi":
 					client.say(target, `${uname} tried to stab ${message} but he created me so... no u`);
+					break;
+				case "demonitized_bot":
+				case "@demonitized_bot":
+					client.say(target, `${uname} tried to stab ${message} but I don't recall asking to be stabbed.`);
 					break;
 				case "corgibutts_darklorduwu":
 				case "@corgibutts_darklorduwu":
@@ -439,7 +483,35 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				case "conflicteddweet":
 					client.say(target, `${uname} tried to stab ${message} but you decided to Deliverance off the hook instead of wait for your teammate, so now you must die.`);
 					break;
-
+				case "@the_sun_knight_solaire":
+				case "the_sun_knight_solaire":
+					client.say(target, `${uname} -> Access denied. File /src/stabbing/transpar3ncy.js requires Hypervisor to access. Search in /src/htdocs/index.html for a plaintext password to access Hypervisor`);
+					break;
+				case "@queenvammatar":
+				case "queenvammatar":
+					client.say(target, `${uname} tried to stab Vamm but Vamm was hungy and ate the knife, because of course they fucking did.`);
+					break;
+				case "@sweetbug03":
+				case "sweetbug03":
+					client.say(target, `${uname} tried to stab Sweetbug, but their indecisiveness on an anti-stab message means I have to put something here as a placeholder. Anyways you cant stab them.`);
+					break;
+				case "@ember4657":
+				case "ember4657":
+					client.say(target, `${uname} tried to stab Ember, but Ember has a bottle of Lighter Fluid- wait why do you have a bottle of lighter fluid- WHY ARE YOU POINTING IT AT ME AAAAAAAAAA`);
+					break;
+				case "@adrioxas":
+				case "adrioxas":
+					client.say(target, `${uname} tried Pepe, but he doesn't give a MOTHERFACK you SACKA SHEET. NOW GO TO BED!`);
+					break;
+				case "@junomeee":
+				case "junomeee":
+					client.say(target, `${uname} tried to stab Juno, but Juno was STALKING YOU so DING DONG GET BONKED`);
+					break;
+				case "@drkill1234567":
+				case "drkill1234567":
+					client.say(target, `${uname} tried to stab DrKill, but because he was mean to my mods every time someone stabs him, he gets timed out for 69 seconds`);
+					client.timeout(target, "drkill1234567", 69, `Was stabbed by ${uname} in channel ${target}`);
+					break;
 			};
 			break;
 		case "dark":
@@ -452,27 +524,26 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				};
 			};
 			break;
-
 		case "spam":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
 				if (configuration.commands["admin-commands"] == "true") {
-
-					client.say(target, "[SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE]").then((result) => {
-						setTimeout(() => {
-							client.say(target, "[SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] ");
-						}, 3000);
-						setTimeout(() => {
-							client.say(target, "[SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] ");
-						}, 6000);
-					});
+					client.say(target, "[SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE]")
+					client.say(target, "[SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] ");
+					client.say(target, "[SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] [SPOILER ABOVE] ");
 				};
 			};
 			break;
 
+		case `tw`:
+		case `warning`:
+			if (target == "#hen_zoid") {
+			client.say(target, `${dname} -> This game has content with Depression, Gore, Suicide, and Mental Illness. Viewer Discretion is advised`);
+			}
+			break;
 		case "map":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
 				client.say(target,
-					`Henzoid's current map is: ${configuration.operation.status.map.name}. ${configuration.operation.status.map.name} is ${configuration.operation.status.map.desc}. Make sure to join the Discord and follow for updates on this and future maps!`);
+					`Henzoid's current map is: ${configuration.operation.status.map.name}. ${configuration.operation.status.map.name} is a map about ${configuration.operation.status.map.desc}. Make sure to join the Discord and follow for updates on this and future maps!`);
 				// henzoidMapCommand(target, userstate, msg, self, tags, user, context, uname, args, rawargs)
 			}
 			break;
@@ -572,28 +643,23 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				client.say(target, `${uname} -> Titty map never will be a real map. For the love of god please stop asking about it!`);
 			}
 			break;
-
-
-		case "awoo-mode":
-			if (target == "#thecasperofjacks") {
-				if (uname == "thecasperofjacks" || uname == "demonitized_boi") {
-					switch (args[0]) {
-						case "true":
-						case "enable":
-						case "on":
-							configuration.commands["awoo-mode"] = true;
-							client.say(target, `@${uname} -> Module awoo-mode has been enabled.`);
-							break;
-						case "false":
-						case "disable":
-						case "off":
-							configuration.commands["awoo-mode"] = false;
-							client.say(target, `@${uname} -> Module awoo-mode has been disabled.`);
-							break;
-					}
-				} else {
-					client.say(target, responseTemplates.noPermission);
-				}
+		case "youtube":
+		case "yt":
+		case "vod":
+			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
+				client.say(target, `${uname} -> Looking for Henzoid's YouTube? Well you've come to the right place! youtube.com/c/Henzoid`);
+			}
+			break;
+		case "twitter":
+		case "tweet":
+		case "twooter":
+			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
+				client.say(target, `${uname} -> Trying to find out when the next Henzoid Concert is? No? Oh you just want their Twitter. Why didn't you just ask! twitter.com/Henzoid`);
+			}
+			break;
+		case "pisszoid":
+			if (target == "#hen_zoid") {
+				client.say(target, `${uname} -> PissZoid isn't real. They can't hurt you.`)
 			}
 			break;
 		case "admin-commands":
@@ -608,12 +674,12 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case "henzoid-cmds":
 			if (uname == "hen_zoid" || uname == "demonitized_boi") {
 				switch (args[0]) {
-					// case "true":
-					// case "enable":
-					// case "on":
-					// 	configuration.commands["henzoid-custom"] = true;
-					// 	client.say(target, `@${uname} -> Module henzoid-custom has been enabled.`);
-					// 	break;
+					case "true":
+					case "enable":
+					case "on":
+						configuration.commands["henzoid-custom"] = true;
+						client.say(target, `@${uname} -> Module henzoid-custom has been enabled.`);
+						break;
 					case "false":
 					case "disable":
 					case "off":
@@ -628,7 +694,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case `prime`:
 		case `prime-gaming`:
 		case `subscribe`:
-		case `free-sub`:
+		case `p`:
 			client.say(target, `PrimeMe Psst. Hey, did you know you can subscribe to one Twitch streamer for free every month!? Well you can with Prime Gaming!! Why not use your free sub on ${target}? PrimeMe`);
 			break;
 		case `lockdown`:
@@ -649,6 +715,10 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				client.say(target, `Two trucks having sex!`);
 			}
 			break;
+		case `pp`:
+			client.say(target, `${uname} -> Excuse me but we dont say that in this Christian™ Minecraft™ Server™`);
+			break;
+
 
 
 
@@ -754,20 +824,6 @@ function debugCommand(target, userstate, msg, self, tags, user) {
 			phasmoCode = code;
 			client.say(target, `Set the Phasmophobia join code to ${code}`);
 			break;
-			// This exists because I managed to used the wrong account when appling for mod on a channel, so for now, this will allow me to moderate. I know it's bad but shut up.
-		case "timeout":
-			client.timeout(target, chnl, 300, `Automated moderation system.`);
-			client.action(target, `${uname} -> Timed out ${chnl} for 300 seconds.`);
-			break;
-		case "ban":
-			client.ban(target, chnl, `Automated moderation system.`);
-			client.action(target, `${uname} -> Banned ${chnl} from channel.`);
-			break;
-		case "unban":
-		case "untimeout":
-			client.unban(target, chnl);
-			client.action(target, `${uname} -> Unbanned ${chnl} from channel.`);
-			break;
 		case "host":
 		case "h":
 			if (args[0] == "-f") {
@@ -805,6 +861,7 @@ function debugCommand(target, userstate, msg, self, tags, user) {
 				console.warn(`Error while Evaluating command. ${err}`);
 				client.say(target, `${uname} -> An error occurred while running the Eval command. Check console for details.`);
 			}
+			break;
 
 	}
 }
@@ -859,16 +916,6 @@ function debugCommand(target, userstate, msg, self, tags, user) {
 // 	}
 // }
 
-function onPunishmentHandler(channel, username, reason, userstate, duration) {
-	switch (channel) {
-		case "peter_lgbt":
-		case "#peter_lgbt":
-			request()
-			break;
-	}
-}
-
-
 function channelLockdownHandler(target, userstate, msg, self, tags, user) {
 	var uname = userstate["username"];
 	if (chnlLockdown == false) {
@@ -886,14 +933,6 @@ function channelLockdownHandler(target, userstate, msg, self, tags, user) {
 	}
 }
 
-function followUser(user, account) {
-
-}
-
-function onFollowHandler() {
-
-}
-
 function onGiftSubUpgradeHandler(target, username, sender, userstate) {
 	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
 		client.say(target, `${username} is continuing the gift sub they got from ${sender}!`)
@@ -908,38 +947,17 @@ function onCheerHandler(target, userstate, message) {
 	let sender = userstate["username"];
 	let bits = userstate["bits"];
 	if (configuration.operation.broadcastEnabledChannels.includes(target)) {
-		if (bits == "69") {
+		if (bits == "69" || bits == "6969") {
 			client.say(target, `${sender} just cheered ${bits} bits! ngl thats pretty nice`);
 		} else if (bits == "420") {
 			client.say(target, `${sender} just cheered ${bits} bits! ngl thats pretty nice. Not as nice as 69, but still nice.`);
 		} else if (bits == "69420" || bits == "42069") {
 			client.say(target, `${sender} just cheered ${bits} bits! That's so nice amirite`);
+		} else if (bits == "666") {
+			client.say(target, `${sender} just summoned the AntiChrist™ by cheering ${bits} bits. HAIL SATAN`);
 		} else {
 			client.say(target, `Thank you ${sender} for cheering ${bits} bits! That's SWICK!`);
 		};
-		// Disabled as it's broken
-		// if (target == `#quimbly3`) {
-		// 	switch (bits) {
-		// 		default:
-		// 			client.say(target, `${userstate["username"]} just cheered ${userstate["bits"]}`);
-		// 			break;
-		// 		case configuration["verdux-info"].bits.boop.includes(bits):
-		// 			client.say(target, `${sender} just booped ${target}`);
-		// 			break;
-		// 		case configuration["verdux-info"].bits.creeper.includes(bits):
-		// 			client.say(target, `${sender} would like to warn ${target} about the Creeper behind them`);
-		// 			break;
-		// 		case configuration["verdux-info"].bits.fly.includes(bits):
-		// 			client.say(target, `${sender} is welcoming ${target} aboard Flight ${bits}`);
-		// 			break;
-		// 		case configuration["verdux-info"].bits.launch.includes(bits):
-		// 			client.say(target, `${target} is sending ${target} TO THE MOOOOOON`);
-		// 			break;
-		// 		case configuration["verdux-info"].bits.teleport.includes(bits):
-		// 			client.say(target, `${sender} is going to send ${target} to their own personal hell!`);
-		// 			break;
-		// 	}
-		// 	}
 	}
 }
 
@@ -960,6 +978,7 @@ function onSubHandler(target, username, method, message, userstate) {
 				client.say(`${target}`, `${username} just subscribed at Tier 3!`);
 				break;
 			default:
+				/* Fallback if for some unholy reason a sub doesn't fall under one of these categories */
 				client.say(`${target}`, `${username} just subscribed!`);
 				break;
 		}
@@ -1013,13 +1032,12 @@ function onGiftSubMysteryHandler(target, username, numbOfSubs, methods, userstat
 }
 
 function onModerationHandler(type, channel, user, reason, userstate, time) {
-	if (channel == "#peter_lgbt" || channel == "peter_lgbt") {
+	if (channel == "#peter_lgbt") {
 		let webhookOptions = {
 			'method': 'POST',
-			'url': 'no',
+			'url': process.env.PETER_MOD,
 			'headers': {
-				'Content-Type': 'application/json',
-				'Cookie': '__dcfduid=62cab842f86145f9a4a271527588b7fa'
+				'Content-Type': 'application/json'
 			},
 			"body": JSON.stringify({
 				"username": "Twitch moderation logging",
@@ -1065,14 +1083,29 @@ function onConnectedHandler(addr, port) {
 
 }
 
+function onRedeemHandler(channel, username, rewardType, tags, message) {
+
+}
+
 function banMaliciousBots() {
 	let autoBanRsn = "Malicious bot account | Clicking on profile will get your IP grabbed";
 	let autoBanChnl = "#demonitized_boi"; /* Default this to my channel unless actively using the function */
-	configuration.autoBanList.forEach(user => {
-		setTimeout(() => {
-			client.ban(autoBanChnl, user, autoBanRsn);
-		}, 3000);
-	})
+	try {
+		let banCnt = -1;
+		setInterval(() => {
+		if (banCnt >= configuration.autoBanList.length) {
+			client.say(autoBanChnl, `Banned all bots from channel!`);
+			banCnt = -1
+			return;
+		}
+		banCnt++;
+		client.ban(autoBanChnl, configuration.autoBanList[banCnt], autoBanRsn).catch((err) => {
+			console.warn(err);
+		})
+	}, 3000);
+	} catch (err) {
+		console.warn(err);
+	}
 }
 
 var session = require("express-session");
@@ -1091,9 +1124,9 @@ const {
 	raw
 } = require("express");
 
-const TWITCH_CLIENT_ID = `x12ea2y7tdpl3bxysv9si4emtxzcen`; // this is just random 
+const TWITCH_CLIENT_ID = process.env.CLIENT_ID;
 const TWITCH_SECRET = process.env.CLIENT_SECRET;
-const SESSION_SECRET = `i[?'Xidk2ik/kR`; // also random
+const SESSION_SECRET = `i[?'Xidk2ik/kR`;
 const CALLBACK_URL = `https://demonitized-api.glitch.me`;
 
 // Initialize Express and middlewares AKA fucking hell
@@ -1108,13 +1141,6 @@ app.use(express.static("public"));
 app.use(passport.initialize());
 app.use(passport.session());
 
-
-
-app.post("/api/interactions", (req, res) => {
-
-	console.log(req);
-
-})
 // Bypass passport profile function to get user profile from Twitch API, then eventually store it with SQL
 OAuth2.prototype.userProfile = function (accessToken, done) {
 	var options = {
@@ -1182,38 +1208,7 @@ app.get(
 	})
 );
 
-app.get("/auth/discord", (request, response) => {
 
-});
-
-app.post("/auth/twitch/update", (request, response) => {
-	let params = {
-		"code": request.params.code,
-		"scope": request.params.scope,
-		"state": requset.params.state
-	}
-
-
-
-});
-
-app.post("/auth/twitch/fetch", (request, response) => {
-
-});
-
-app.post("/auth/discord/update", (request, response) => {
-	let params = {
-		"code": request.params.code,
-		"scope": request.params.scope,
-		"state": requset.params.state
-	}
-
-
-});
-
-app.post("/auth/discord/fetch", (request, response) => {
-
-})
 // Set route for OAuth redirect
 app.get(
 	"/auth/twitch/callback",
@@ -1267,6 +1262,6 @@ app.get("/", function (req, res) {
 	}
 });
 
-app.listen(25938, function () {
+app.listen(6969, function () {
 	console.log("Twitch auth listening on port 25938!");
 });
