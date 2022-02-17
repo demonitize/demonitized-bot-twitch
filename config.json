@@ -1,6 +1,6 @@
 {
 	"bannedWords": "fag|nigg",
-	"deadnames": "nully|shea",
+	"deadnames": "not|showing|here",
 	"moderation": {
 		"channels": [
 			"#mrquestion11",
@@ -201,8 +201,8 @@
 		"verdux-commands": true
 	},
 	"auth": {
-		"client-id": "x12ea2y7tdpl3bxysv9si4emtxzcen",
-		"token": "4xdod5uklfkpwm38ad38lsz6s9fvk1"
+		"client-id": "null",
+		"token": "null"
 	},
 	"autoBanList": [
 		"clickonmeplease",
