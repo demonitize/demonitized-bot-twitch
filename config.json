@@ -1,4 +1,6 @@
 {
+	"bannedWords": "fag|nigg",
+	"deadnames": "nully|shea",
 	"moderation": {
 		"channels": [
 			"#mrquestion11",
@@ -10,38 +12,13 @@
 			"#chaosdog1",
 			"#octogaster",
 			"#treat",
-			"#tianyivt",
 			"#r00tkitt",
-			"#conflicteddweet",
-			"#whowaltwhere"
+			"#whowaltwhere",
+			"#queenvammatar",
+			"#janogamer27show",
+			"#chloeincarnate",
+			"#ember4657"
 		],
-		"whitelisted": {
-			"words": [],
-			"users": [
-				"unrealgrl",
-				"wumbo_117",
-				"joshy_024",
-				"treat",
-				"tianyivt",
-				"demonitized_boi",
-				"demonitized_bot",
-				"pyrell",
-				"maplsyrp0",
-				"tuwumiee",
-				"zumzumtm",
-				"senorspicypeen",
-				"insight124",
-				"venom1000",
-				"dspill07",
-				"hippiesolit",
-				"lasko2142",
-				"knackeredocelot",
-				"mapiesyrup0",
-				"gmcustom",
-				"twee",
-				"aldabora"
-			]
-		},
 		"blacklisted": {
 			"words": [
 				"nigger",
@@ -53,7 +30,8 @@
 				"n1gg3r",
 				"faggot",
 				"fag"
-			]
+			],
+			"links": "cutt\u002Ely|bigfollows|bigfollow|bigf ollows\u002Ecom|clck\u002Eru|vk\u002Ecc|alturl\u002Ecom|gg\u002Egg|bit\u002Ely"
 		}
 	},
 	"pronouns": {
@@ -65,35 +43,36 @@
 		"#conflicteddweet": "he/they",
 		"#hen_zoid": "Any (they/them prefered)",
 		"#thecasperofjacks": "he/him",
-		"#pastelsdarling":"she/her",
-		"#whowaltwhere":"he/him"
+		"#pastelsdarling": "she/her",
+		"#whowaltwhere": "he/him",
+		"#queenvammatar": "Vamm/Atar",
+		"#junomeee": "she/her",
+		"#chloeincarnate":"she/they"
 	},
 	"operation": {
 		"status": {
 			"map": {
-				"name": "Miscommunications 2",
-				"desc":"The second iteration of Miscommunications, which is a map to test your abilities to communicate with each other under extreme limitations. TL;DR Cow Return Grass 2.0"
+				"name": "Fourtitude",
+				"desc": "Pushing and Pulling with BEEG BLOCC, ELEMENTAL EXECUTION, TERRIBLE TRAFFIC (basically new york at all times), ROBOT RIDGES, and Recognizable Ripoffs"
 			},
 			"maps": {
-				"grayscale":"mccreations.net/content/Henzoid/Greyscale",
-				"trolley":"mccreations.net/content/Henzoid/The-Trolley-Problem",
-				"dripdrop":"mccreations.net/content/Henzoid/Drip-Drop---Multiplayer-Dripleaf-Parkour",
-				"buildinggame":"mccreations.net/content/Henzoid/The-Building-Game-for-1.16",
-				"miscommunications":"mccreations.net/content/Henzoid/Miscommunications",
-				"sixteensquared":"mccreations.net/content/Henzoid/16%5E2",
-				"tm3":"mccreations.net/content/Henzoid/Twitch-Makes-a-Minecraft-Map",
-				"eddie":"mccreations.net/content/Henzoid/Eddie-the-Adventurer"
+				"grayscale": "mccreations.net/content/Henzoid/Greyscale",
+				"trolley": "mccreations.net/content/Henzoid/The-Trolley-Problem",
+				"dripdrop": "mccreations.net/content/Henzoid/Drip-Drop---Multiplayer-Dripleaf-Parkour",
+				"buildinggame": "mccreations.net/content/Henzoid/The-Building-Game-for-1.16",
+				"miscommunications": "mccreations.net/content/Henzoid/Miscommunications",
+				"sixteensquared": "mccreations.net/content/Henzoid/16%5E2",
+				"tm3": "mccreations.net/content/Henzoid/Twitch-Makes-a-Minecraft-Map",
+				"eddie": "mccreations.net/content/Henzoid/Eddie-the-Adventurer"
 			},
 			"code": "000000"
 		},
 		"broadcastEnabledChannels": [
 			"#demonitized_boi",
-			"#quimbly3",
 			"#pastelsdarling",
 			"#duckhunterone",
-			"#walkernewton",
+			"#walkerhatesyou ",
 			"#treat",
-			"#tianyivt",
 			"#trollfartsvt",
 			"#chubbss_",
 			"#chaosdog1",
@@ -103,9 +82,12 @@
 			"#octogaster",
 			"#reportcardsmc",
 			"#r00tkitt",
-			"#conflicteddweet",
 			"#grimett27",
-			"#whowaltwhere"
+			"#whowaltwhere",
+			"#queenvammatar",
+			"#janogamer27show",
+			"#chloeincarnate",
+			"#ember4657"
 		],
 		"channels": [
 			"demonitized_boi",
@@ -115,18 +97,23 @@
 			"treat",
 			"tianyivt",
 			"trollfartsvt",
+			"chloeincarnate",
 			"chaosdog1",
 			"mrquestion11",
+			"ember4657",
 			"peter_lgbt",
 			"octogaster",
 			"r00tkitt",
 			"whowaltwhere",
+			"junomeee",
 			"theneoncryptid",
+			"janogamer27show",
 			"pastelsdarling",
 			"duckhunterone",
-			"walkernewton",
+			"walkerhatesyou ",
 			"thecasperofjacks",
 			"missnala2134",
+			"queenvammatar",
 			"trumpetplayer2d2",
 			"pastelisapeach",
 			"flintlockkatze",
@@ -135,6 +122,7 @@
 			"sweetbug03",
 			"conflicteddweet",
 			"oceanasky",
+			"t1tans5",
 			"ninaarii",
 			"alabamalife",
 			"strawberys",
@@ -145,12 +133,12 @@
 			"revenantdragonn",
 			"conflicteddweet",
 			"dspill07",
+			"adrioxas",
 			"triicode",
 			"abbott0400",
 			"c_doug",
 			"sporkerific",
 			"kelseymarieplays",
-			"sohinki",
 			"sonofamermaid",
 			"nanamaria",
 			"captainmikayla",
@@ -165,7 +153,6 @@
 			"frostydoesplay",
 			"dinnerbone",
 			"aeywoo",
-			"phoenixsclive",
 			"bemz_mc",
 			"reportcardsmc",
 			"not_3than",
@@ -188,7 +175,6 @@
 			"oyasumiyuni",
 			"protroid",
 			"drevery",
-			"jano_gamer27",
 			"osteoporosis_x_anxiety",
 			"itsagoos",
 			"sidefury",
@@ -202,7 +188,9 @@
 			"grimett27",
 			"goodleshoes"
 		],
-		"blacklisted": []
+		"blacklisted": [
+			"#quimbly3"
+		]
 	},
 	"commands": {
 		"admin-commands": false,
