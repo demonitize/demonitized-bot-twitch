@@ -326,7 +326,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case "uwu":
 			client.say(target, `${uname} -> Command disabled until i can make it work without crashing.`);
 			return;
-			// var u = args;
+			var u = msg.splice(0, 1);
 			var w = u.replace(new RegExp("\\b" + "this" + "\\b"), "thiws").replace(new RegExp("\\b" + "this" + "\\b"), 'thawt').replace(new RegExp("\\b" + "and" + "\\b"), 'awnd').replace(new RegExp("\\b" + "is" + "\\b"), 'iws').replace(new RegExp("\\b" + "to" + "\\b"), 'tuwu').replace(new RegExp("\\b" + "you" + "\\b"), 'uwu').replace(new RegExp("\\b" + "not" + "\\b"), 'nowt').replace(/l/g, 'w').replace(/r/g, 'w');
 			client.say(target, `${w}`);
 			break;
