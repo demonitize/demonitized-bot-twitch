@@ -20,11 +20,13 @@
 
 `??pronouns` - Lists the streamer's pronouns.
 
-`??so <username>` - Shouts Out the user who you mention
+`??so <username>` - Shouts Out the user who you mention. Requires being a mod, or the Streamer.
 
 `??ad` - Runs an ad for 69 seconds. Nice (Requires Editor Permissions)
 
-`??ld` - Locks down the channel with Subs Only Mode, Emote Only Mode, and Max Followers Only Mode
+`??ld` - Locks down the channel with Subs Only Mode, Emote Only Mode, and Max Followers Only Mode. Requires being a mod, or the Streamer. 
+
+`??debug` - A debug command designed for the creator of the bot. Other users are unable to use this command. 
 
 ## Henzoid Commands ##
 
