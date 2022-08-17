@@ -102,7 +102,7 @@ client.on("emotesets", (sets, obj) => {
 // Connect to Twitch:
 client.connect();
 
-client.on("raided", function(target, uname, viewers) {
+client.on("raided", function (target, uname, viewers) {
 	if (target == "#henzoid") {
 		client.say("#henzoid", `${uname} Thank you for raiding Henzoid! I'm afraid you have their old channel that they no longer have access to, their new user name is "hen_zoid". I know very original (The other ${viewers} of you can also go there )`);
 	}
@@ -280,7 +280,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		client.say(target, `${dname} is now back from lurking and returned with a cow and grass.`);
 		return;
 	}
-	
+
 	let prefixRegex = new RegExp(
 		`^(${escapeRegex(prefix)})\\s*`
 	);
@@ -513,11 +513,11 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				case "pandasdarling":
 				case "@pandasdarling":
 
-				if (randomStabMessage(10) <= 7) {
-					client.say(target, `${uname} tried to stab ${message} but PandasDarling used Panda Sniffing ASMR. It's super effective! PandasDarling Wins!`);
-				} else {
-					client.say(target, `${uname} tried to stab ${message}, but at least it's better than FAT SHAMING THE PANDA! What did the poor panda do to deserve this? SirSad`);
-				}
+					if (randomStabMessage(10) <= 7) {
+						client.say(target, `${uname} tried to stab ${message} but PandasDarling used Panda Sniffing ASMR. It's super effective! PandasDarling Wins!`);
+					} else {
+						client.say(target, `${uname} tried to stab ${message}, but at least it's better than FAT SHAMING THE PANDA! What did the poor panda do to deserve this? SirSad`);
+					}
 					break;
 				case "sisterdarling":
 				case "@sisterdarling":
@@ -625,13 +625,13 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 				};
 			};
 			break;
-		case `mapset`: 
+		case `mapset`:
 			if (uname == "hen_zoid" || uname == "demonitized_boi") {
 				mapDataCommand(target, userstate, msg, self, tags, user);
 			} else {
 				client.say(target, responseTemplates.noPermission);
 			}
-		break;
+			break;
 
 		case `tw`:
 		case `warning`:
@@ -698,7 +698,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 		case "discord":
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
 				client.say(target, "Did you know that Henzoid has a Discord? Wait you did... Well they do, and it's free to join! Come on down and join The Henzone! discord.com/invite/Gtj6MeD");
-			} 
+			}
 			break;
 
 		case "music":
@@ -718,7 +718,7 @@ function onMessageHandler(target, userstate, msg, self, tags, user) {
 			if (target == "#hen_zoid" && configuration.commands["henzoid-custom"] == true) {
 				client.say(target, `Did you know that Henzoid made a Minecraft styled Magic The Gathering set of cards? No! how the fuck didn't you know that twitter.com/minecraftmtg was really cool? Well it is and you should go to twitter.com/minecraftmtg for more info. Click this link to learn more -> twitter.com/minecraftmtg (CLICK IT NOW)`);
 			}
-break;
+			break;
 		case "ree":
 		case "reee":
 		case "reeee":
@@ -915,7 +915,7 @@ break;
 			if (target == "#hen_zoid") {
 				client.say(target, `You can download TenSquared: Remastered here! -> ${configuration.operation.status.maps.tensquared}`);
 			};
-		break;
+			break;
 	}
 }
 
@@ -1437,56 +1437,56 @@ const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
 const HMAC_PREFIX = 'sha256=';
 
 
-app.use(express.raw({          // Need the raw message body for signature verification
-    type: 'application/json'
-})) 
+app.use(express.raw({ // Need the raw message body for signature verification
+	type: 'application/json'
+}))
 
 function getSecret() {
-    // TODO: Get your secret from secure storage. This is the secret you passed 
-    // when you subscribed to the event.
-    return process.env.EVENTSUB_SECRET;
+	// TODO: Get your secret from secure storage. This is the secret you passed 
+	// when you subscribed to the event.
+	return process.env.EVENTSUB_SECRET;
 }
 
 // Build the message used to get the HMAC.
 function getHmacMessage(request) {
-    return (request.headers[TWITCH_MESSAGE_ID] + 
-        request.headers[TWITCH_MESSAGE_TIMESTAMP] + 
-        request.body);
+	return (request.headers[TWITCH_MESSAGE_ID] +
+		request.headers[TWITCH_MESSAGE_TIMESTAMP] +
+		request.body);
 }
 
 // Get the HMAC.
 function getHmac(secret, message) {
-    return crypto.createHmac('sha256', secret)
-    .update(message)
-    .digest('hex');
+	return crypto.createHmac('sha256', secret)
+		.update(message)
+		.digest('hex');
 }
 
 // Verify whether your signature matches Twitch's signature.
 function verifyMessage(hmac, verifySignature) {
-    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(verifySignature));
+	return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(verifySignature));
 }
 
- 
+
 
 app.post("/eventsub", (req, res) => {
-console.log(`got EventSub message`);
+	console.log(`got EventSub message`);
 	res.sendStatus(200)
 	// let secret = getSecret();
-    // let message = getHmacMessage(req);
-    // let hmac = HMAC_PREFIX + getHmac(secret, message);  // Signature to compare to Twitch's
+	// let message = getHmacMessage(req);
+	// let hmac = HMAC_PREFIX + getHmac(secret, message);  // Signature to compare to Twitch's
 
-    // if (true === verifyMessage(hmac, req.headers[TWITCH_MESSAGE_SIGNATURE])) {
-    //     console.log("signatures match");
+	// if (true === verifyMessage(hmac, req.headers[TWITCH_MESSAGE_SIGNATURE])) {
+	//     console.log("signatures match");
 
-    //     // Get JSON object from body, so you can process the message.
-    //     let notification = JSON.parse(req.body);
+	//     // Get JSON object from body, so you can process the message.
+	//     let notification = JSON.parse(req.body);
 
-    //     // Handle notification...
-    // }
-    // else {
-    //     console.log('403');
-    //     res.sendStatus(403);
-    // }
+	//     // Handle notification...
+	// }
+	// else {
+	//     console.log('403');
+	//     res.sendStatus(403);
+	// }
 	// // Get JSON object from body, so you can process the message.
 	// let notification = JSON.parse(req.body);
 
@@ -1494,7 +1494,7 @@ console.log(`got EventSub message`);
 	// 	// TODO: Do something with event's data.
 	// 	console.log(`Event type: ${notification.subscription.type}`);
 	// 	console.log(JSON.stringify(notification.event, null, 4));
-		
+
 	// 	res.sendStatus(204);
 	// }         else if (MESSAGE_TYPE_VERIFICATION === req.headers[MESSAGE_TYPE]) {
 	//    res.status(200).send(notification.challenge);
@@ -1502,7 +1502,7 @@ console.log(`got EventSub message`);
 	switch (req.body.event.broadcaster_user_id) {
 		case "54552255":
 			client.say("#hen_zoid", `BisexualPride Thank you ${req.body.event.user_name} for following Henzoid! Be sure to join the Discord by typing ??discord BisexualPride`);
-		break;
+			break;
 	}
 
 
@@ -1531,4 +1531,3 @@ app.get("/", function (req, res) {
 app.listen(6969, function () {
 	console.log("Twitch auth listening on port 6969!");
 });
-
