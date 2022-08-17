@@ -1,6 +1,6 @@
 {
 	"name": "demonitized-bot-twitch",
-	"version": "1.36.69",
+	"version": "1.40.0",
 	"description": "The only bot (currently) that can auto-ban those \"wanna become famous\" scam bots.",
 	"main": "bot.js",
 	"scripts": {
